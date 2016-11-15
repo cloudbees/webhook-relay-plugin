@@ -13,24 +13,20 @@ import java.net.URI;
  * https://www.eclipse.org/jetty/documentation/9.3.x/jetty-websocket-client-api.html
  */
 @Extension
+@SuppressWarnings(value = "unused")
 public class WebsocketHandler extends PeriodicWork {
 
 
     public WebsocketHandler() {
-
         super();
         System.err.println("yay");
         Thread t = new Thread(new Runnable() {
-
             @Override
             public void run() {
-                listen();
+                while (true) { listen(); }
             }
         });
-
         t.start();
-
-
 
     }
 
@@ -48,9 +44,13 @@ public class WebsocketHandler extends PeriodicWork {
     private static void listen() {
         WebSocketClient client = new WebSocketClient();
         //String destUri = "wss://cloudbees-hooksocket.beescloud.com/ws?tenant=java";
-        String destUri = "ws://localhost:8888/ws?tenant=java";
+        String destUri = "ws://172.18.128.252:33048/ws?tenant=java";
+        //String destUri = "ws://localhost:8888/ws?tenant=java";
 
-        Object socket = new WebhookReceiver();
+
+        //String destUri = "ws://localhost:8888/ws?tenant=java";
+
+        WebhookReceiver socket = new WebhookReceiver();
         try
         {
             client.start();
@@ -59,7 +59,8 @@ public class WebsocketHandler extends PeriodicWork {
             ClientUpgradeRequest request = new ClientUpgradeRequest();
             client.connect(socket,echoUri,request);
             System.out.printf("Connecting to : %s%n",echoUri);
-            Thread.sleep(200000);
+            socket.await();
+            System.out.println("Peace out...");
 
         }
         catch (Throwable t)

@@ -76,6 +76,15 @@
       <artifactId>websocket-client</artifactId>
       <version>9.2.19.v20160908</version>
     </dependency>
+
+    <dependency>
+      <groupId>com.coravy.hudson.plugins.github</groupId>
+      <artifactId>github</artifactId>
+      <version>1.23.0</version>
+
+    </dependency>
+
+
   </dependencies>
 
 
