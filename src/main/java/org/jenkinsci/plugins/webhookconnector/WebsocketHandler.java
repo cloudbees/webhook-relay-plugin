@@ -47,10 +47,10 @@ public class WebsocketHandler extends PeriodicWork {
         WebSocketClient client = new WebSocketClient();
         //String destUri = "wss://cloudbees-hooksocket.beescloud.com/ws?tenant=java";
         //String destUri = "ws://172.18.128.252:33048/ws?tenant=java";
-        String destUri = "ws://localhost:8888/subscribe/testing";
-
-
-        //String destUri = "ws://localhost:8888/ws?tenant=java";
+        String destUri = System.getenv("WEBHOOK_SUBSCRIPTION");
+        if (destUri == null) {
+            destUri = "ws://localhost:8888/subscribe/testing";
+        }
 
         WebhookReceiver socket = new WebhookReceiver();
         try
