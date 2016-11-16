@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.webhookconnector;
 
+import jenkins.model.Jenkins;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -16,6 +17,8 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
+
+//MN see: https://www.eclipse.org/jetty/documentation/9.3.x/jetty-websocket-client-api.html
 
 @WebSocket
 public class WebhookReceiver {
@@ -38,7 +41,9 @@ public class WebhookReceiver {
     public void onMessage(String message) throws IOException {
 
         HttpClient client = HttpClientBuilder.create().build();
-        HttpPost post = new HttpPost("/jenkins/github-webhook/");
+        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "/jenkins/github-webhook/" : "/github-webhook/";
+        System.out.println(postback);
+        HttpPost post = new HttpPost(postback);
 
         post.setHeader("User-Agent", "bastion-master");
         post.setHeader("X-Github-Event", "push");
