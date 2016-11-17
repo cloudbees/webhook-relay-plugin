@@ -5,6 +5,7 @@ import hudson.model.PeriodicWork;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.net.URI;
 import java.util.concurrent.Future;
@@ -44,12 +45,21 @@ public class WebsocketHandler extends PeriodicWork {
      * The WebhookReceiver handles what happens when an event comes in.
      */
     private static void listen() {
-        WebSocketClient client = new WebSocketClient();
-        //String destUri = "wss://cloudbees-hooksocket.beescloud.com/ws?tenant=java";
-        //String destUri = "ws://172.18.128.252:33048/ws?tenant=java";
+        final WebSocketClient client;
+
+        //String destUri = "wss://cloudbees-hooksocket.beescloud.com/subscribe/testing";
+        //String destUri = "ws://172.18.128.252:33048/ws?tenant=testing";
         String destUri = System.getenv("WEBHOOK_SUBSCRIPTION");
         if (destUri == null) {
             destUri = "ws://localhost:8888/subscribe/testing";
+        }
+
+        if (destUri.startsWith("wss://")) {
+            SslContextFactory sslContextFactory = new SslContextFactory();
+            sslContextFactory.setTrustAll(true);
+            client = new WebSocketClient(sslContextFactory);
+        } else {
+            client = new WebSocketClient();
         }
 
         WebhookReceiver socket = new WebhookReceiver();
@@ -59,12 +69,12 @@ public class WebsocketHandler extends PeriodicWork {
             URI echoUri = new URI(destUri);
             ClientUpgradeRequest request = new ClientUpgradeRequest();
             Future<Session> fs = client.connect(socket,echoUri,request);
-            System.out.printf("Attempting to subscribe for webhooks to : %s%n",echoUri);
+            System.out.printf("Attempting to subscribe to webhooks at : %s%n", echoUri);
 
             try {
                 fs.get(5, TimeUnit.SECONDS);
             } catch (Exception e) {
-                System.out.println("Failure to connect. Will try again shortly.. " + e.getMessage());
+                System.out.println("Failed to connect - will retry shortly (" + e.getMessage() + ")");
                 Thread.sleep(5000);
                 return;
             }
