@@ -8,24 +8,24 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 
 //MN see: https://www.eclipse.org/jetty/documentation/9.3.x/jetty-websocket-client-api.html
 
-@WebSocket
-public class WebhookReceiver {
+
+public class WebhookReceiver extends WebSocketClient {
 
     private final CountDownLatch closeLatch;
-
-    public WebhookReceiver() {
+    private final URI serverUri;
+    public WebhookReceiver(URI serverUri) {
+        super(serverUri);
+        this.serverUri = serverUri;
         closeLatch = new CountDownLatch(1);
     }
 
@@ -37,11 +37,16 @@ public class WebhookReceiver {
         }
     }
 
-    @OnWebSocketMessage
-    public void onMessage(String message) throws IOException {
+    @Override
+    public void onOpen(ServerHandshake serverHandshake) {
+        System.out.printf("Got connect: %s", serverUri);
+    }
+
+    @Override
+    public void onMessage(String message) {
 
         HttpClient client = HttpClientBuilder.create().build();
-        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "/jenkins/github-webhook/" : "/github-webhook/";
+        String postback = (Boolean.getBoolean("hudson.hpi.run")) ? "/jenkins/github-webhook/" : "/github-webhook/";
         System.out.println(postback);
         HttpPost post = new HttpPost(postback);
 
@@ -50,20 +55,27 @@ public class WebhookReceiver {
         post.setEntity(new StringEntity(message, ContentType.create("application/x-www-form-urlencoded")));
 
 
-        HttpResponse res = client.execute(new HttpHost(InetAddress.getLocalHost(), 8080), post);
+        HttpResponse res = null;
+        try {
+            res = client.execute(new HttpHost(InetAddress.getLocalHost(), 8080), post);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         System.out.println(res.toString());
         System.out.println("Got msg:" + message);
     }
 
-    @OnWebSocketClose
-    public void onClose(int statusCode, String reason)
-    {
-        System.out.printf("Connection closed: %d - %s%n",statusCode,reason);
+    @Override
+    public void onClose(int i, String s, boolean b) {
+        System.out.printf("Connection closed: %d - %s%n", i, s);
         this.closeLatch.countDown();
+
     }
 
-    @OnWebSocketConnect
-    public void onConnect(Session session)
-    {
-        System.out.printf("Got connect: %s%n",session);
-    }}
+    @Override
+    public void onError(Exception e) {
+        System.out.println("Client error");
+        e.printStackTrace();
+    }
+
+}

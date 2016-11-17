@@ -71,17 +71,18 @@
   </pluginRepositories>
 
   <dependencies>
-    <dependency>
-      <groupId>org.eclipse.jetty.websocket</groupId>
-      <artifactId>websocket-client</artifactId>
-      <version>9.2.19.v20160908</version>
-    </dependency>
 
     <dependency>
       <groupId>com.coravy.hudson.plugins.github</groupId>
       <artifactId>github</artifactId>
       <version>1.23.0</version>
 
+    </dependency>
+
+    <dependency>
+      <groupId>org.java-websocket</groupId>
+      <artifactId>Java-WebSocket</artifactId>
+      <version>1.3.0</version>
     </dependency>
 
 
