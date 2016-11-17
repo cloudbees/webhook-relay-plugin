@@ -68,8 +68,9 @@ public class WebsocketHandler extends PeriodicWork {
             receiver.setWebSocketFactory(new DefaultSSLWebSocketClientFactory(sslContext));
         }
 
-        receiver.connectBlocking();
-        receiver.await();
+        receiver.connectBlocking(); //wait for connection to be established
+        receiver.await(); //block here until it is closed, or errors out
+
 
 
     }

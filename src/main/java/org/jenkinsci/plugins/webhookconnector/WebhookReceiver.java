@@ -76,6 +76,7 @@ public class WebhookReceiver extends WebSocketClient {
     public void onError(Exception e) {
         System.out.println("Client error");
         e.printStackTrace();
+        this.closeLatch.countDown();
     }
 
 }
