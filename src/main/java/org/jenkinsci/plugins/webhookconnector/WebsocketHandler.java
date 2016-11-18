@@ -71,6 +71,7 @@ public class WebsocketHandler extends PeriodicWork {
         receiver.connectBlocking(); //wait for connection to be established
         receiver.await(); //block here until it is closed, or errors out
 
+        Thread.sleep(2000);
 
 
     }

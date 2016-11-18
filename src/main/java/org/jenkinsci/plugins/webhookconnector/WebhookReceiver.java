@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.webhookconnector;
 
 import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -44,18 +45,32 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onMessage(String message) {
+        JSONObject json = JSONObject.fromObject(message);
+        JSONObject headers = json.getJSONObject("headers");
+        String body = json.getString("body");
 
         HttpClient client = HttpClientBuilder.create().build();
-        String postback = (Boolean.getBoolean("hudson.hpi.run")) ? "/jenkins/github-webhook/" : "/github-webhook/";
+        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "/jenkins/github-webhook/" : "/github-webhook/";
         System.out.println(postback);
         HttpPost post = new HttpPost(postback);
+        String contentType = "application/json";
+
+        for (Object k : headers.names()) {
+            String headerName = (String) k;
+            String header = (String) headers.get(headerName);
+            if (headerName.equalsIgnoreCase("content-type")) {
+                contentType = header;
+            }
+            if (!headerName.equalsIgnoreCase("content-length")) {
+                post.setHeader(headerName, header);
+            }
+        }
 
         post.setHeader("User-Agent", "bastion-master");
-        post.setHeader("X-Github-Event", "push");
-        post.setEntity(new StringEntity(message, ContentType.create("application/x-www-form-urlencoded")));
+        post.setEntity(new StringEntity(body, ContentType.create(contentType)));
 
 
-        HttpResponse res = null;
+        HttpResponse res;
         try {
             res = client.execute(new HttpHost(InetAddress.getLocalHost(), 8080), post);
         } catch (IOException e) {
@@ -67,7 +82,7 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onClose(int i, String s, boolean b) {
-        System.out.printf("Connection closed: %d - %s%n", i, s);
+        System.out.printf("Websocket Connection closed: %d - %s%n will try again soon.", i, s);
         this.closeLatch.countDown();
 
     }
@@ -75,8 +90,8 @@ public class WebhookReceiver extends WebSocketClient {
     @Override
     public void onError(Exception e) {
         System.out.println("Client error");
-        e.printStackTrace();
-        this.closeLatch.countDown();
+        //this.closeLatch.countDown();
+        throw new RuntimeException(e);
     }
 
 }
