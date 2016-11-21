@@ -10,7 +10,7 @@
     <relativePath/>
   </parent>
   <groupId>org.jenkins-ci.plugins</groupId>
-  <artifactId>webhook-connector</artifactId>
+  <artifactId>webhook-relay-plugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
