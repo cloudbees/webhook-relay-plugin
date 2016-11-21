@@ -56,9 +56,6 @@ public class WebsocketHandler extends PeriodicWork {
      */
     private static void listen() throws URISyntaxException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 
-
-        //String destUri = "wss://cloudbees-hooksocket.beescloud.com/subscribe/testing";
-        //String destUri = "ws://172.18.128.252:33048/ws?tenant=testing";
         String destUri = System.getenv("WEBHOOK_SUBSCRIPTION");
         if (destUri == null) {
             destUri = "ws://localhost:8888/subscribe/testing";
@@ -74,9 +71,14 @@ public class WebsocketHandler extends PeriodicWork {
         }
 
         receiver.connectBlocking(); //wait for connection to be established
+        if (!receiver.getConnection().isOpen()) {
+            LOGGER.info("UNABLE TO ESTABLISH WEBSOCKET CONNECTION FOR WEBHOOK. Will back of and try later");
+            Thread.sleep(10000);
+            return;
+        }
         receiver.await(); //block here until it is closed, or errors out
 
-        Thread.sleep(2000);
+
 
 
     }

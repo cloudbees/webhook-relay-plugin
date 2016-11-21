@@ -87,16 +87,15 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onClose(int i, String s, boolean b) {
-        LOGGER.error(String.format("Websocket Connection closed: %d - %s%n will try again soon.", i, s));
+        LOGGER.info(String.format("Websocket Connection closed: %d - %s%n will try reconnect again soon.", i, s));
         this.closeLatch.countDown();
 
     }
 
     @Override
     public void onError(Exception e) {
-        LOGGER.error("Client error");
-        //this.closeLatch.countDown();
-        throw new RuntimeException(e);
+        LOGGER.fine("Client error from websocket");
+        this.closeLatch.countDown();
     }
 
 }
