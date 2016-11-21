@@ -10,7 +10,7 @@
     <relativePath/>
   </parent>
   <groupId>org.jenkins-ci.plugins</groupId>
-  <artifactId>webhook-relay-plugin</artifactId>
+  <artifactId>webhook-relay</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
@@ -28,35 +28,26 @@
     -->
   </properties>
 
-  <name>TODO Plugin</name>
-  <description>TODO</description>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
-
-  <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
+  <name>Webhook Relay Plugin</name>
+  <description>
+    Allow Jenkins to connect to a webhook-relay and proxy the events from the relay into
+    the local Jenkins
+  </description>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Webhook+Relay+Plugin</url>
 
   <licenses>
     <license>
       <name>MIT License</name>
-      <url>http://opensource.org/licenses/MIT</url>
+      <url>https://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
 
-  <!-- If you want this to appear on the wiki page:
-  <developers>
-    <developer>
-      <id>bhacker</id>
-      <name>Bob Q. Hacker</name>
-      <email>bhacker@nowhere.net</email>
-    </developer>
-  </developers>
-  -->
-  <!-- Assuming you want to host on @jenkinsci:
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-    <url>http://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    <connection>scm:git:git://github.com/michaelneale/${project.artifactId}-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:michaelneale/${project.artifactId}-plugin.git</developerConnection>
+    <url>https://github.com/michaelneale/${project.artifactId}-plugin</url>
   </scm>
-   -->
+
   <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
@@ -76,7 +67,6 @@
       <groupId>com.coravy.hudson.plugins.github</groupId>
       <artifactId>github</artifactId>
       <version>1.23.0</version>
-
     </dependency>
 
     <dependency>
@@ -84,7 +74,6 @@
       <artifactId>Java-WebSocket</artifactId>
       <version>1.3.0</version>
     </dependency>
-
 
   </dependencies>
 
