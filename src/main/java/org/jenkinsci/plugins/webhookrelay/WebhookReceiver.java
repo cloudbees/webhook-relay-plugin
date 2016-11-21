@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.webhookconnector;
+package org.jenkinsci.plugins.webhookrelay;
 
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -16,11 +16,14 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //MN see: https://www.eclipse.org/jetty/documentation/9.3.x/jetty-websocket-client-api.html
 
 
 public class WebhookReceiver extends WebSocketClient {
+    private static final Logger LOGGER = Logger.getLogger(WebsocketHandler.class.getName());
 
     private final CountDownLatch closeLatch;
     private final URI serverUri;
@@ -40,11 +43,13 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake serverHandshake) {
-        System.out.printf("Got connect: %s", serverUri);
+        LOGGER.info("webhook-relay-plugin.onOpen: " + serverUri);
     }
 
     @Override
     public void onMessage(String message) {
+        LOGGER.info("webhook-relay-plugin.onMessage: " + message);
+
         JSONObject json = JSONObject.fromObject(message);
         JSONObject headers = json.getJSONObject("headers");
         String body = json.getString("body");
@@ -66,7 +71,7 @@ public class WebhookReceiver extends WebSocketClient {
             }
         }
 
-        post.setHeader("User-Agent", "bastion-master");
+        post.setHeader("User-Agent", "webhook-relay-plugin");
         post.setEntity(new StringEntity(body, ContentType.create(contentType)));
 
 
@@ -82,14 +87,14 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onClose(int i, String s, boolean b) {
-        System.out.printf("Websocket Connection closed: %d - %s%n will try again soon.", i, s);
+        LOGGER.error(String.format("Websocket Connection closed: %d - %s%n will try again soon.", i, s));
         this.closeLatch.countDown();
 
     }
 
     @Override
     public void onError(Exception e) {
-        System.out.println("Client error");
+        LOGGER.error("Client error");
         //this.closeLatch.countDown();
         throw new RuntimeException(e);
     }

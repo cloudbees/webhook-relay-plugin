@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.webhookconnector;
+package org.jenkinsci.plugins.webhookrelay;
 
 import hudson.Extension;
 import hudson.model.PeriodicWork;
@@ -11,6 +11,8 @@ import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Create a persistent connection to the webhook forwarding remote service.
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Extension
 @SuppressWarnings(value = "unused")
 public class WebsocketHandler extends PeriodicWork {
+    private static final Logger LOGGER = Logger.getLogger(WebsocketHandler.class.getName());
 
     public WebsocketHandler() {
         super();
@@ -60,6 +63,8 @@ public class WebsocketHandler extends PeriodicWork {
         if (destUri == null) {
             destUri = "ws://localhost:8888/subscribe/testing";
         }
+
+        LOGGER.info("webhook-relay-plugin connecting to " + destUri);
 
         SSLContext sslContext = SSLContext.getInstance( "TLS" );
         sslContext.init( null, null, null ); // will use java's default key and trust store which is sufficient unless you deal with self-signed certificates
