@@ -22,15 +22,28 @@ import java.util.logging.Logger;
 @SuppressWarnings(value = "unused")
 public class WebsocketHandler extends PeriodicWork {
     private static final Logger LOGGER = Logger.getLogger(WebsocketHandler.class.getName());
+    private String destUri;
 
-    public WebsocketHandler() {
+    public WebsocketHandler() throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
+
+
         super();
+        final SSLContext sslContext = SSLContext.getInstance( "TLS" );
+        sslContext.init( null, null, null ); // will use java's default key and trust store which is sufficient unless you deal with self-signed certificates
+        this.destUri = System.getenv("WEBHOOK_SUBSCRIPTION");
+        if (destUri == null) {
+            destUri = "ws://localhost:8888/subscribe/testing";
+        }
+
+        LOGGER.info("webhook-relay-plugin connecting to " + destUri);
+        final DefaultSSLWebSocketClientFactory sslClientFactory = new DefaultSSLWebSocketClientFactory(sslContext);
+
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        listen();
+                        listen(sslClientFactory);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -54,21 +67,13 @@ public class WebsocketHandler extends PeriodicWork {
      * Once the connection is over, it returns. You can just establish it again (in fact this is what you should do).
      * The WebhookReceiver handles what happens when an event comes in.
      */
-    private static void listen() throws URISyntaxException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
+    private void listen(DefaultSSLWebSocketClientFactory sslClientFactory) throws URISyntaxException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 
-        String destUri = System.getenv("WEBHOOK_SUBSCRIPTION");
-        if (destUri == null) {
-            destUri = "ws://localhost:8888/subscribe/testing";
-        }
-
-        LOGGER.info("webhook-relay-plugin connecting to " + destUri);
-
-        SSLContext sslContext = SSLContext.getInstance( "TLS" );
-        sslContext.init( null, null, null ); // will use java's default key and trust store which is sufficient unless you deal with self-signed certificates
         WebhookReceiver receiver = new WebhookReceiver(new URI(destUri));
         if (destUri.startsWith("wss://")) {
-            receiver.setWebSocketFactory(new DefaultSSLWebSocketClientFactory(sslContext));
+            receiver.setWebSocketFactory(sslClientFactory);
         }
+
 
         receiver.connectBlocking(); //wait for connection to be established
         if (!receiver.getConnection().isOpen()) {
@@ -77,9 +82,6 @@ public class WebsocketHandler extends PeriodicWork {
             return;
         }
         receiver.await(); //block here until it is closed, or errors out
-
-
-
 
     }
 
