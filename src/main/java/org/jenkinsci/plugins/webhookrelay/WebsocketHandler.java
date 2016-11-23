@@ -2,16 +2,14 @@ package org.jenkinsci.plugins.webhookrelay;
 
 import hudson.Extension;
 import hudson.model.PeriodicWork;
-import org.java_websocket.client.DefaultSSLWebSocketClientFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -36,14 +34,14 @@ public class WebsocketHandler extends PeriodicWork {
         }
 
         LOGGER.info("webhook-relay-plugin connecting to " + destUri);
-        final DefaultSSLWebSocketClientFactory sslClientFactory = new DefaultSSLWebSocketClientFactory(sslContext);
+        final SSLSocketFactory socketFactor = sslContext.getSocketFactory();
 
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        listen(sslClientFactory);
+                        listen(socketFactor);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -67,11 +65,11 @@ public class WebsocketHandler extends PeriodicWork {
      * Once the connection is over, it returns. You can just establish it again (in fact this is what you should do).
      * The WebhookReceiver handles what happens when an event comes in.
      */
-    private void listen(DefaultSSLWebSocketClientFactory sslClientFactory) throws URISyntaxException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
+    private void listen(SSLSocketFactory sslSocketFactory) throws URISyntaxException, InterruptedException, NoSuchAlgorithmException, KeyManagementException, IOException {
 
         WebhookReceiver receiver = new WebhookReceiver(new URI(destUri));
         if (destUri.startsWith("wss://")) {
-            receiver.setWebSocketFactory(sslClientFactory);
+            receiver.setSocket(sslSocketFactory.createSocket());
         }
 
 
