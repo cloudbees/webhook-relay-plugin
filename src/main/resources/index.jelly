@@ -1,7 +1,9 @@
 <?jelly escape-by-default='true'?>
-<!--
-  This view is used to render the installed plugins page.
--->
-<div>
-  Subscribe to webhooks without exposing Jenkins to the web.
-</div>
+<j:jelly 
+  xmlns:j="jelly:core">
+
+  <div>
+    Subscribe to webhooks without exposing Jenkins to the web.
+  </div>
+
+</j:jelly>
