@@ -63,10 +63,11 @@
 
   <dependencies>
 
+    <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
     <dependency>
-      <groupId>com.coravy.hudson.plugins.github</groupId>
-      <artifactId>github</artifactId>
-      <version>1.23.0</version>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.2</version>
     </dependency>
 
 
