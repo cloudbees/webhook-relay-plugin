@@ -56,7 +56,7 @@ public class WebhookReceiver extends WebSocketClient {
 
         HttpClient client = HttpClientBuilder.create().build();
         String postback = (Boolean.getBoolean("hudson.hpi.run"))? "/jenkins/github-webhook/" : "/github-webhook/";
-        System.out.println(postback);
+
         HttpPost post = new HttpPost(postback);
         String contentType = "application/json";
 
@@ -79,10 +79,11 @@ public class WebhookReceiver extends WebSocketClient {
         try {
             res = client.execute(new HttpHost(InetAddress.getLocalHost(), 8080), post);
         } catch (IOException e) {
+            LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
-        System.out.println(res.toString());
-        System.out.println("Got msg:" + message);
+        LOGGER.info(String.format("Result from post back: %s", res.toString()));
+
     }
 
     @Override

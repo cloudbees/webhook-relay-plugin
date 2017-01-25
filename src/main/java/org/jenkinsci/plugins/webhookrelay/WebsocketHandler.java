@@ -57,6 +57,7 @@ public class WebsocketHandler {
                             try {
                                 Thread.sleep(10000); // In the event of something catastrophic - just backoff a little
                             } catch (InterruptedException ignore) {
+                                LOGGER.fine("Interrupted listening");
                             }
                         }
                     }

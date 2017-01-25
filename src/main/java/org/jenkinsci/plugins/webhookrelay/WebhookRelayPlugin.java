@@ -47,7 +47,7 @@ implements Describable<WebhookRelayPlugin>, ExtensionPoint {
             load();
             //this.relayURI = relayURI;
             WebhookRelayStorage.relayURI = relayURI;
-            LOGGER.info("Here we are XXX - " + relayURI);
+            LOGGER.info("relayURI - " + relayURI);
         }
 
         public String getRelayURI() {
