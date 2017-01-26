@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class WebhookReceiver extends WebSocketClient {
     private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
 
-    private static String rootUrl = null;
+    private static String rootUrl = System.getProperty(WebhookReceiver.class.getName() + ".rootUrl");
 
     private final CountDownLatch closeLatch;
     private final URI serverUri;
