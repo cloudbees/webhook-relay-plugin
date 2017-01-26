@@ -2,7 +2,6 @@ package org.jenkinsci.plugins.webhookrelay;
 
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -13,7 +12,6 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
@@ -57,9 +55,10 @@ public class WebhookReceiver extends WebSocketClient {
         String body = json.getString("body");
 
         HttpClient client = HttpClientBuilder.create().build();
-        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "/jenkins/github-webhook/" : "/github-webhook/";
+        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "jenkins/github-webhook/" : "github-webhook/";
 
-        HttpPost post = new HttpPost(postback);
+        String baseUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
+        HttpPost post = new HttpPost(baseUrl + postback);
         String contentType = "application/json";
 
         for (Object k : headers.names()) {
@@ -79,8 +78,7 @@ public class WebhookReceiver extends WebSocketClient {
 
         HttpResponse res;
         try {
-            String jenkinsUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
-            res = client.execute(new HttpHost(jenkinsUrl), post);
+            res = client.execute(post);
         } catch (IOException e) {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
