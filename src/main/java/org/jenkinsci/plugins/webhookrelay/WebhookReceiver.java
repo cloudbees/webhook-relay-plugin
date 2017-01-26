@@ -1,6 +1,5 @@
 package org.jenkinsci.plugins.webhookrelay;
 
-import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -23,7 +22,7 @@ import java.util.logging.Logger;
 
 
 public class WebhookReceiver extends WebSocketClient {
-    private static final Logger LOGGER = Logger.getLogger(WebsocketHandler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
 
     private final CountDownLatch closeLatch;
     private final URI serverUri;
@@ -95,7 +94,7 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onError(Exception e) {
-        LOGGER.fine("Client error from websocket");
+        LOGGER.log(Level.SEVERE, "Client error from websocket", e);
         this.closeLatch.countDown();
     }
 
