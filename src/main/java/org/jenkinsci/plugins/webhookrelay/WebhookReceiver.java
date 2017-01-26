@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.webhookrelay;
 
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -23,6 +24,8 @@ import java.util.logging.Logger;
 
 public class WebhookReceiver extends WebSocketClient {
     private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
+
+    private static String rootUrl = null;
 
     private final CountDownLatch closeLatch;
     private final URI serverUri;
@@ -76,7 +79,8 @@ public class WebhookReceiver extends WebSocketClient {
 
         HttpResponse res;
         try {
-            res = client.execute(new HttpHost(InetAddress.getLocalHost(), 8080), post);
+            String jenkinsUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
+            res = client.execute(new HttpHost(jenkinsUrl), post);
         } catch (IOException e) {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
