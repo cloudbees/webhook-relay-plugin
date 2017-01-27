@@ -13,6 +13,8 @@ import org.java_websocket.handshake.ServerHandshake;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +69,7 @@ public class WebhookReceiver extends WebSocketClient {
             if (headerName.equalsIgnoreCase("content-type")) {
                 contentType = header;
             }
-            if (!headerName.equalsIgnoreCase("content-length")) {
+            if (shouldBeIncluded(headerName)) {
                 post.setHeader(headerName, header);
             }
         }
@@ -98,6 +100,14 @@ public class WebhookReceiver extends WebSocketClient {
     public void onError(Exception e) {
         LOGGER.log(Level.SEVERE, "Client error from websocket", e);
         this.closeLatch.countDown();
+    }
+
+    /**
+     * Exclude "Content-Length" and "Host".
+     */
+    public boolean shouldBeIncluded(String header) {
+        return !header.equalsIgnoreCase("content-length") && !header.equalsIgnoreCase("Host");
+
     }
 
 }
