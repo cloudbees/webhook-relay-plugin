@@ -1,7 +1,7 @@
 package org.jenkinsci.plugins.webhookrelay;
 
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -12,7 +12,6 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
@@ -23,6 +22,8 @@ import java.util.logging.Logger;
 
 public class WebhookReceiver extends WebSocketClient {
     private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
+
+    private static String rootUrl = System.getProperty(WebhookReceiver.class.getName() + ".rootUrl");
 
     private final CountDownLatch closeLatch;
     private final URI serverUri;
@@ -54,9 +55,10 @@ public class WebhookReceiver extends WebSocketClient {
         String body = json.getString("body");
 
         HttpClient client = HttpClientBuilder.create().build();
-        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "/jenkins/github-webhook/" : "/github-webhook/";
+        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "jenkins/github-webhook/" : "github-webhook/";
 
-        HttpPost post = new HttpPost(postback);
+        String baseUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
+        HttpPost post = new HttpPost(baseUrl + postback);
         String contentType = "application/json";
 
         for (Object k : headers.names()) {
@@ -65,7 +67,7 @@ public class WebhookReceiver extends WebSocketClient {
             if (headerName.equalsIgnoreCase("content-type")) {
                 contentType = header;
             }
-            if (!headerName.equalsIgnoreCase("content-length")) {
+            if (shouldBeIncluded(headerName)) {
                 post.setHeader(headerName, header);
             }
         }
@@ -76,7 +78,7 @@ public class WebhookReceiver extends WebSocketClient {
 
         HttpResponse res;
         try {
-            res = client.execute(new HttpHost(InetAddress.getLocalHost(), 8080), post);
+            res = client.execute(post);
         } catch (IOException e) {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
@@ -96,6 +98,14 @@ public class WebhookReceiver extends WebSocketClient {
     public void onError(Exception e) {
         LOGGER.log(Level.SEVERE, "Client error from websocket", e);
         this.closeLatch.countDown();
+    }
+
+    /**
+     * Exclude "Content-Length" and "Host".
+     */
+    public boolean shouldBeIncluded(String header) {
+        return !header.equalsIgnoreCase("content-length") && !header.equalsIgnoreCase("Host");
+
     }
 
 }
