@@ -55,7 +55,7 @@ public class WebhookReceiver extends WebSocketClient {
         String body = json.getString("body");
 
         HttpClient client = HttpClientBuilder.create().build();
-        String postback = (Boolean.getBoolean("hudson.hpi.run"))? "jenkins/github-webhook/" : "github-webhook/";
+        String postback = "github-webhook/";
 
         String baseUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
         HttpPost post = new HttpPost(baseUrl + postback);
