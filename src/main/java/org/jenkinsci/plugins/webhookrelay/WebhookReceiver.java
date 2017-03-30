@@ -43,12 +43,12 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake serverHandshake) {
-        LOGGER.info("webhook-relay-plugin.onOpen: " + serverUri);
+        LOGGER.fine("webhook-relay-plugin.onOpen: " + serverUri);
     }
 
     @Override
     public void onMessage(String message) {
-        LOGGER.info("webhook-relay-plugin.onMessage: " + message);
+        LOGGER.fine("webhook-relay-plugin.onMessage: " + message);
 
         JSONObject json = JSONObject.fromObject(message);
         JSONObject headers = json.getJSONObject("headers");
@@ -83,13 +83,13 @@ public class WebhookReceiver extends WebSocketClient {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
-        LOGGER.info(String.format("Result from post back: %s", res.toString()));
+        LOGGER.fine(String.format("Result from post back: %s", res.toString()));
 
     }
 
     @Override
     public void onClose(int i, String s, boolean b) {
-        LOGGER.info(String.format("Websocket Connection closed: %d - %s%n will try reconnect again soon.", i, s));
+        LOGGER.fine(String.format("Websocket Connection closed: %d - %s%n will try reconnect again soon.", i, s));
         this.closeLatch.countDown();
 
     }
