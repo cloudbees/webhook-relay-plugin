@@ -8,47 +8,115 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.ws.WebSocket;
+import org.asynchttpclient.ws.WebSocketTextListener;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 import java.io.IOException;
-import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//MN see: https://www.eclipse.org/jetty/documentation/9.3.x/jetty-websocket-client-api.html
-
-
-public class WebhookReceiver extends WebSocketClient {
+/**
+ * Create a persistent connection to the webhook forwarding remote service.
+ */
+public class WebhookReceiver {
     private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
-
-    private static String rootUrl = System.getProperty(WebhookReceiver.class.getName() + ".rootUrl");
+    private String relayURI;
+    private static final String rootUrl = System.getProperty(WebhookReceiver.class.getName() + ".rootUrl");
 
     private final CountDownLatch closeLatch;
-    private final URI serverUri;
-    public WebhookReceiver(URI serverUri) {
-        super(serverUri);
-        this.serverUri = serverUri;
+
+
+    public WebhookReceiver() {
         closeLatch = new CountDownLatch(1);
     }
 
-    public void await() {
+    public void connectToRelay(String relayURI) {
+        LOGGER.info("Connecting to " + relayURI);
+        this.relayURI = relayURI;
+
         try {
-            closeLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread t = new Thread(() -> {
+                while (true) {
+                    try {
+                        listen();
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, e.getMessage(), e);
+                        try {
+                            Thread.sleep(10000); // In the event of something catastrophic - just backoff a little
+                        } catch (InterruptedException ignore) {
+                            LOGGER.fine("Interrupted listening");
+                        }
+                    }
+                }
+            });
+            t.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public void onOpen(ServerHandshake serverHandshake) {
-        LOGGER.fine("webhook-relay-plugin.onOpen: " + serverUri);
+
+    /**
+     * This will connect to the remove service, and block.
+     * Once the connection is over, it returns. You can just establish it again (in fact this is what you should do).
+     * The WebhookReceiver handles what happens when an event comes in.
+     */
+    private void listen() throws URISyntaxException, ExecutionException, InterruptedException {
+
+        newWebSocketConnect(relayURI);
+
+        //block here until it is closed, or errors out
+        closeLatch.await();
+
     }
 
-    @Override
-    public void onMessage(String message) {
-        LOGGER.fine("webhook-relay-plugin.onMessage: " + message);
+
+    public void newWebSocketConnect(String relayURI) throws ExecutionException, InterruptedException {
+        AsyncHttpClientConfig cf = new DefaultAsyncHttpClientConfig.Builder().setWebSocketMaxFrameSize(Integer.MAX_VALUE).build();
+
+        AsyncHttpClient c = new DefaultAsyncHttpClient(cf);
+
+
+        c.prepareGet(relayURI)
+                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
+                        new WebSocketTextListener() {
+
+                            @Override
+                            public void onMessage(String message) {
+                                LOGGER.info("webhook-relay-plugin.onMessage: " + message);
+                                applyNotification(message);
+                            }
+
+                            @Override
+                            public void onOpen(WebSocket websocket) {
+                                LOGGER.fine("wwebhook-relay-plugin.onOpen: connection opened");
+                            }
+
+                            @Override
+                            public void onClose(WebSocket websocket) {
+                                LOGGER.warning("Websocket connection closed");
+                                closeLatch.countDown();
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                LOGGER.log(Level.SEVERE, "webhook-relay-plugin.onError", t);
+                                closeLatch.countDown();
+                            }
+                        }).build()).get();
+
+    }
+
+
+    private void applyNotification(String message) {
 
         JSONObject json = JSONObject.fromObject(message);
         JSONObject headers = json.getJSONObject("headers");
@@ -83,27 +151,14 @@ public class WebhookReceiver extends WebSocketClient {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
-        LOGGER.fine(String.format("Result from post back: %s", res.toString()));
+        LOGGER.info(String.format("Result from post back: %s", res.toString()));
 
-    }
-
-    @Override
-    public void onClose(int i, String s, boolean b) {
-        LOGGER.fine(String.format("Websocket Connection closed: %d - %s%n will try reconnect again soon.", i, s));
-        this.closeLatch.countDown();
-
-    }
-
-    @Override
-    public void onError(Exception e) {
-        LOGGER.log(Level.SEVERE, "Client error from websocket", e);
-        this.closeLatch.countDown();
     }
 
     /**
      * Exclude "Content-Length" and "Host".
      */
-    public boolean shouldBeIncluded(String header) {
+    private boolean shouldBeIncluded(String header) {
         return !header.equalsIgnoreCase("content-length") && !header.equalsIgnoreCase("Host");
 
     }
