@@ -71,18 +71,13 @@ public class WebhookReceiver {
      * The WebhookReceiver handles what happens when an event comes in.
      */
     private void listen(String relayURI) throws URISyntaxException, ExecutionException, InterruptedException, IOException {
-        WebSocket ws = newWebSocketConnection(relayURI);
+        WebSocket ws = CLIENT.prepareGet(relayURI).execute(handler).get();
         try {
             //block here until it is closed, or errors out
             closeLatch.await();
         } finally {
             ws.close();
         }
-    }
-
-
-    public WebSocket newWebSocketConnection(String relayURI) throws ExecutionException, InterruptedException {
-        return CLIENT.prepareGet(relayURI).execute(handler).get();
     }
 
     /**
