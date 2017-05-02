@@ -28,8 +28,9 @@ import java.util.logging.Logger;
  */
 public class WebhookReceiver {
     private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
-    private String relayURI;
     private static final String rootUrl = System.getProperty(WebhookReceiver.class.getName() + ".rootUrl");
+    private static final AsyncHttpClientConfig CLIENT_CONFIG = new DefaultAsyncHttpClientConfig.Builder().setWebSocketMaxFrameSize(Integer.MAX_VALUE).build();
+    private static final AsyncHttpClient CLIENT = new DefaultAsyncHttpClient(CLIENT_CONFIG);
 
     private final CountDownLatch closeLatch;
 
@@ -40,13 +41,12 @@ public class WebhookReceiver {
 
     public void connectToRelay(String relayURI) {
         LOGGER.info("Connecting to " + relayURI);
-        this.relayURI = relayURI;
 
         try {
             Thread t = new Thread(() -> {
                 while (true) {
                     try {
-                        listen();
+                        listen(relayURI);
                     } catch (Exception e) {
                         LOGGER.log(Level.WARNING, e.getMessage(), e);
                         try {
@@ -69,23 +69,22 @@ public class WebhookReceiver {
      * Once the connection is over, it returns. You can just establish it again (in fact this is what you should do).
      * The WebhookReceiver handles what happens when an event comes in.
      */
-    private void listen() throws URISyntaxException, ExecutionException, InterruptedException {
+    private void listen(String relayURI) throws URISyntaxException, ExecutionException, InterruptedException, IOException {
 
-        newWebSocketConnect(relayURI);
+        WebSocket ws = newWebSocketConnect(relayURI);
 
         //block here until it is closed, or errors out
         closeLatch.await();
 
+        ws.close();
+
     }
 
 
-    public void newWebSocketConnect(String relayURI) throws ExecutionException, InterruptedException {
-        AsyncHttpClientConfig cf = new DefaultAsyncHttpClientConfig.Builder().setWebSocketMaxFrameSize(Integer.MAX_VALUE).build();
-
-        AsyncHttpClient c = new DefaultAsyncHttpClient(cf);
+    public WebSocket newWebSocketConnect(String relayURI) throws ExecutionException, InterruptedException {
 
 
-        c.prepareGet(relayURI)
+        return CLIENT.prepareGet(relayURI)
                 .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
                         new WebSocketTextListener() {
 
