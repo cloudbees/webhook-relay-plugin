@@ -33,10 +33,11 @@ public class WebhookReceiver {
     private static final AsyncHttpClient CLIENT = new DefaultAsyncHttpClient(CLIENT_CONFIG);
 
     private final CountDownLatch closeLatch;
-
+    private final WebSocketUpgradeHandler handler;
 
     public WebhookReceiver() {
         closeLatch = new CountDownLatch(1);
+        handler = newHandler();
     }
 
     public void connectToRelay(String relayURI) {
@@ -70,51 +71,58 @@ public class WebhookReceiver {
      * The WebhookReceiver handles what happens when an event comes in.
      */
     private void listen(String relayURI) throws URISyntaxException, ExecutionException, InterruptedException, IOException {
-
-        WebSocket ws = newWebSocketConnect(relayURI);
-
-        //block here until it is closed, or errors out
-        closeLatch.await();
-
-        ws.close();
-
+        WebSocket ws = newWebSocketConnection(relayURI);
+        try {
+            //block here until it is closed, or errors out
+            closeLatch.await();
+        } finally {
+            ws.close();
+        }
     }
 
 
-    public WebSocket newWebSocketConnect(String relayURI) throws ExecutionException, InterruptedException {
+    public WebSocket newWebSocketConnection(String relayURI) throws ExecutionException, InterruptedException {
+        return CLIENT.prepareGet(relayURI).execute(handler).get();
+    }
 
+    /**
+     * Make a new websocket callback handler.
+     * This should only need to be done once and reused over and over.
+     * A latch is used - should a close or an error happen, it unlatches it so that the connection can be renewed.
+     */
+    private WebSocketUpgradeHandler newHandler() {
+        return new WebSocketUpgradeHandler.Builder().addWebSocketListener(
+                new WebSocketTextListener() {
 
-        return CLIENT.prepareGet(relayURI)
-                .execute(new WebSocketUpgradeHandler.Builder().addWebSocketListener(
-                        new WebSocketTextListener() {
+                    @Override
+                    public void onMessage(String message) {
+                        LOGGER.info("webhook-relay-plugin.onMessage: " + message);
+                        applyNotification(message);
+                    }
 
-                            @Override
-                            public void onMessage(String message) {
-                                LOGGER.info("webhook-relay-plugin.onMessage: " + message);
-                                applyNotification(message);
-                            }
+                    @Override
+                    public void onOpen(WebSocket websocket) {
+                        LOGGER.fine("wwebhook-relay-plugin.onOpen: connection opened");
+                    }
 
-                            @Override
-                            public void onOpen(WebSocket websocket) {
-                                LOGGER.fine("wwebhook-relay-plugin.onOpen: connection opened");
-                            }
+                    @Override
+                    public void onClose(WebSocket websocket) {
+                        LOGGER.warning("Websocket connection closed");
+                        closeLatch.countDown();
+                    }
 
-                            @Override
-                            public void onClose(WebSocket websocket) {
-                                LOGGER.warning("Websocket connection closed");
-                                closeLatch.countDown();
-                            }
-
-                            @Override
-                            public void onError(Throwable t) {
-                                LOGGER.log(Level.SEVERE, "webhook-relay-plugin.onError", t);
-                                closeLatch.countDown();
-                            }
-                        }).build()).get();
-
+                    @Override
+                    public void onError(Throwable t) {
+                        LOGGER.log(Level.SEVERE, "webhook-relay-plugin.onError", t);
+                        closeLatch.countDown();
+                    }
+                }).build();
     }
 
 
+    /**
+     * Apply the forwarded payload to Jenkins itself - ie post back to /github-webhook/
+     */
     private void applyNotification(String message) {
 
         JSONObject json = JSONObject.fromObject(message);
