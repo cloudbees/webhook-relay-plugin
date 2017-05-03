@@ -48,6 +48,7 @@ public class WebhookReceiver {
                 while (true) {
                     try {
                         listen(relayURI);
+                        LOGGER.info("RECONNECTING...");
                     } catch (Exception e) {
                         LOGGER.log(Level.WARNING, e.getMessage(), e);
                         try {
@@ -97,18 +98,19 @@ public class WebhookReceiver {
 
                     @Override
                     public void onOpen(WebSocket websocket) {
-                        LOGGER.fine("wwebhook-relay-plugin.onOpen: connection opened");
+                        LOGGER.info("webhook-relay-plugin.onOpen: connection opened");
+
                     }
 
                     @Override
                     public void onClose(WebSocket websocket) {
-                        LOGGER.warning("Websocket connection closed");
+                        LOGGER.info("Websocket connection closed");
                         closeLatch.countDown();
                     }
 
                     @Override
                     public void onError(Throwable t) {
-                        LOGGER.log(Level.SEVERE, "webhook-relay-plugin.onError", t);
+                        LOGGER.log(Level.INFO, "webhook-relay-plugin.onError", t);
                         closeLatch.countDown();
                     }
                 }).build();
