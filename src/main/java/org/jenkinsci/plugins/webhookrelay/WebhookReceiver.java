@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.webhookrelay;
 
+import hudson.model.Executor;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.apache.http.HttpResponse;
@@ -8,6 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.tools.ant.taskdefs.Exec;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
@@ -20,6 +22,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +38,8 @@ public class WebhookReceiver {
 
     private final CountDownLatch closeLatch;
     private final WebSocketUpgradeHandler handler;
+    private String relayURI;
+    private ExecutorService listener;
 
     public WebhookReceiver() {
         closeLatch = new CountDownLatch(1);
@@ -42,27 +48,38 @@ public class WebhookReceiver {
 
     public void connectToRelay(String relayURI) {
         LOGGER.info("Connecting to " + relayURI);
+        this.relayURI = relayURI;
+        runListeningHook();
+    }
 
-        try {
-            Thread t = new Thread(() -> {
-                while (true) {
+    public void disconnectFromRelay() {
+        if (listener != null) {
+            listener.shutdown();
+            listener = null;
+        }
+    }
+
+
+    private void runListeningHook() {
+
+        if (listener == null) listener = Executors.newFixedThreadPool(1);
+
+        listener.execute(() -> {
+            while (true) {
+                try {
+                    listen();
+                } catch (Exception e) {
+                    LOGGER.info("webhook-relay-plugin: An error was encountered listening for webhooks. Will try again later");
+                    LOGGER.log(Level.FINE, e.getMessage(), e);
                     try {
-                        listen(relayURI);
-                    } catch (Exception e) {
-                        LOGGER.info("webhook-relay-plugin: An error was encountered listening for webhooks. Will try again later");
-                        LOGGER.log(Level.FINE, e.getMessage(), e);
-                        try {
-                            Thread.sleep(10000); // In the event of something catastrophic - just backoff a little
-                        } catch (InterruptedException ignore) {
-                            LOGGER.fine("Interrupted listening");
-                        }
+                        Thread.sleep(10000); // In the event of something catastrophic - just backoff a little
+                    } catch (InterruptedException ignore) {
+                        LOGGER.fine("Interrupted listening");
                     }
                 }
-            });
-            t.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+            }
+        });
+
     }
 
 
@@ -71,7 +88,7 @@ public class WebhookReceiver {
      * Once the connection is over, it returns. You can just establish it again (in fact this is what you should do).
      * The WebhookReceiver handles what happens when an event comes in.
      */
-    private void listen(String relayURI) throws URISyntaxException, ExecutionException, InterruptedException, IOException {
+    private void listen() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
         WebSocket ws = CLIENT.prepareGet(relayURI).execute(handler).get();
         try {
             //block here until it is closed, or errors out

@@ -27,6 +27,7 @@ public class WebhookRelayManager {
         if (StringUtils.isBlank(relayURI)) {
             //this.bugsnag = null;
             LOGGER.warning("WebhookRelay not connected as no relay URI configured");
+            websocketHandler.disconnectFromRelay();
             return;
         }
 
