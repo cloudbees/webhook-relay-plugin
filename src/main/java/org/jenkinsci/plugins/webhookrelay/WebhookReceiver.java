@@ -48,9 +48,9 @@ public class WebhookReceiver {
                 while (true) {
                     try {
                         listen(relayURI);
-                        LOGGER.info("RECONNECTING...");
                     } catch (Exception e) {
-                        LOGGER.log(Level.WARNING, e.getMessage(), e);
+                        LOGGER.info("webhook-relay-plugin: An error was encountered listening for webhooks. Will try again later");
+                        LOGGER.log(Level.FINE, e.getMessage(), e);
                         try {
                             Thread.sleep(10000); // In the event of something catastrophic - just backoff a little
                         } catch (InterruptedException ignore) {
@@ -110,7 +110,7 @@ public class WebhookReceiver {
 
                     @Override
                     public void onError(Throwable t) {
-                        LOGGER.log(Level.INFO, "webhook-relay-plugin.onError", t);
+                        LOGGER.log(Level.WARNING, "webhook-relay-plugin.onError", t);
                         closeLatch.countDown();
                     }
                 }).build();
