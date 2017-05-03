@@ -92,7 +92,7 @@ public class WebhookReceiver {
 
                     @Override
                     public void onMessage(String message) {
-                        LOGGER.info("webhook-relay-plugin.onMessage: " + message);
+                        LOGGER.fine("webhook-relay-plugin.onMessage: " + message);
                         applyNotification(message);
                     }
 
@@ -104,7 +104,7 @@ public class WebhookReceiver {
 
                     @Override
                     public void onClose(WebSocket websocket) {
-                        LOGGER.info("Websocket connection closed");
+                        LOGGER.fine("Websocket connection closed");
                         closeLatch.countDown();
                     }
 
@@ -155,7 +155,7 @@ public class WebhookReceiver {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
-        LOGGER.info(String.format("Result from post back: %s", res.toString()));
+        LOGGER.fine(String.format("Result from post back: %s", res.toString()));
 
     }
 
