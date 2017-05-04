@@ -1,16 +1,14 @@
 package org.jenkinsci.plugins.webhookrelay;
 
-import hudson.model.Executor;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.tools.ant.taskdefs.Exec;
-import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -20,7 +18,6 @@ import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,53 +30,41 @@ import java.util.logging.Logger;
 public class WebhookReceiver {
     private static final Logger LOGGER = Logger.getLogger(WebhookReceiver.class.getName());
     private static final String rootUrl = System.getProperty(WebhookReceiver.class.getName() + ".rootUrl");
-    private static final AsyncHttpClientConfig CLIENT_CONFIG = new DefaultAsyncHttpClientConfig.Builder().setWebSocketMaxFrameSize(Integer.MAX_VALUE).build();
-    private static final AsyncHttpClient CLIENT = new DefaultAsyncHttpClient(CLIENT_CONFIG);
 
-    private final CountDownLatch closeLatch;
     private final WebSocketUpgradeHandler handler;
-    private String relayURI;
-    private ExecutorService listener;
+    private volatile String relayURI;
+    private volatile WebSocket webSocket;
+    private ExecutorService heartBeat = Executors.newSingleThreadExecutor();
 
     public WebhookReceiver() {
-        closeLatch = new CountDownLatch(1);
         handler = newHandler();
+        startHeartBeat(heartBeat);
     }
+
 
     public void connectToRelay(String relayURI) {
-        LOGGER.info("Connecting to " + relayURI);
+        LOGGER.info("webhook-relay-plugin.connectToRelay: Connecting to " + relayURI);
         this.relayURI = relayURI;
-        runListeningHook();
-    }
-
-    public void disconnectFromRelay() {
-        if (listener != null) {
-            listener.shutdown();
-            listener = null;
+        try {
+            disconnectFromRelay();
+            listen();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "webhook-relay-plugin: Unable to open websocket", e);
         }
     }
 
-
-    private void runListeningHook() {
-
-        if (listener == null) listener = Executors.newFixedThreadPool(1);
-
-        listener.execute(() -> {
-            while (true) {
-                try {
-                    listen();
-                } catch (Exception e) {
-                    LOGGER.info("webhook-relay-plugin: An error was encountered listening for webhooks. Will try again later");
-                    LOGGER.log(Level.FINE, e.getMessage(), e);
-                    try {
-                        Thread.sleep(10000); // In the event of something catastrophic - just backoff a little
-                    } catch (InterruptedException ignore) {
-                        LOGGER.fine("Interrupted listening");
-                    }
-                }
+    public void disconnectFromRelay() {
+        if (isOpen()) {
+            try {
+                webSocket.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.SEVERE, "webhook-relay-plugin: unable to close websocket", e);
             }
-        });
+        }
+    }
 
+    private boolean isOpen() {
+        return webSocket != null && webSocket.isOpen();
     }
 
 
@@ -89,13 +74,10 @@ public class WebhookReceiver {
      * The WebhookReceiver handles what happens when an event comes in.
      */
     private void listen() throws URISyntaxException, ExecutionException, InterruptedException, IOException {
-        WebSocket ws = CLIENT.prepareGet(relayURI).execute(handler).get();
-        try {
-            //block here until it is closed, or errors out
-            closeLatch.await();
-        } finally {
-            ws.close();
-        }
+        DefaultAsyncHttpClientConfig clientConfig = new DefaultAsyncHttpClientConfig.Builder().setWebSocketMaxFrameSize(Integer.MAX_VALUE).build();
+        this.webSocket = new DefaultAsyncHttpClient(clientConfig).prepareGet(relayURI).execute(handler).get();
+        System.out.println("New websocket " + this.webSocket.toString());
+        System.out.println("New websocket " + this.webSocket.isOpen());
     }
 
     /**
@@ -109,7 +91,7 @@ public class WebhookReceiver {
 
                     @Override
                     public void onMessage(String message) {
-                        LOGGER.fine("webhook-relay-plugin.onMessage: " + message);
+                        LOGGER.info("webhook-relay-plugin.onMessage: " + message);
                         applyNotification(message);
                     }
 
@@ -121,14 +103,12 @@ public class WebhookReceiver {
 
                     @Override
                     public void onClose(WebSocket websocket) {
-                        LOGGER.fine("Websocket connection closed");
-                        closeLatch.countDown();
+                        LOGGER.info("webhook-relay-plugin.onClose: Websocket connection closed");
                     }
 
                     @Override
                     public void onError(Throwable t) {
-                        LOGGER.log(Level.WARNING, "webhook-relay-plugin.onError", t);
-                        closeLatch.countDown();
+                        LOGGER.log(Level.SEVERE, "webhook-relay-plugin.onError", t);
                     }
                 }).build();
     }
@@ -183,5 +163,29 @@ public class WebhookReceiver {
         return !header.equalsIgnoreCase("content-length") && !header.equalsIgnoreCase("Host");
 
     }
+
+    /** check every so often iff the connection is open and refresh it if it isn't */
+    private void startHeartBeat(ExecutorService heartBeat) {
+        heartBeat.execute(() -> {
+            try {
+                while (true) {
+                    Thread.sleep(10000);
+                    System.err.println(webSocket.toString());
+
+                    if (!StringUtils.isEmpty(relayURI) && webSocket != null && !webSocket.isOpen()) {
+                        LOGGER.info("webhook-relay-plugin: websocket not connected. Attempting to refresh connection");
+                        LOGGER.info("open " + webSocket.isOpen());
+                        LOGGER.info("open " + webSocket.toString());
+
+                        listen();
+                    }
+
+
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "webhook-relay-plugin: Unable to refresh websocket connection, will try later.", e);
+            }});
+    }
+
 
 }
