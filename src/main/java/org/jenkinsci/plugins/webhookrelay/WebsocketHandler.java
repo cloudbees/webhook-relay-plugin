@@ -52,6 +52,8 @@ public class WebsocketHandler {
                     while (true) {
                         try {
                             listen(socketFactor);
+                            receiver.close();
+                            Thread.sleep(5000);
                         } catch (Exception e) {
                             LOGGER.log(Level.WARNING, e.getMessage(), e);
                             try {
