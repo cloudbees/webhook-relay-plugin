@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.webhookrelay;
 
 import jenkins.model.Jenkins;
+import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -48,7 +49,7 @@ public class WebhookReceiver extends WebSocketClient {
 
     @Override
     public void onMessage(String message) {
-        LOGGER.fine("webhook-relay-plugin.onMessage: " + message);
+        LOGGER.finest("webhook-relay-plugin.onMessage: " + message);
 
         JSONObject json = JSONObject.fromObject(message);
         JSONObject headers = json.getJSONObject("headers");
@@ -72,6 +73,19 @@ public class WebhookReceiver extends WebSocketClient {
             }
         }
 
+        // for debug purpose, try to extract some useful infos from received event :
+        if (body != null) {
+            try {
+                JSONObject bodyJson = JSONObject.fromObject(body);
+                JSONObject repo = JSONObject.fromObject(bodyJson.get("body")).getJSONObject("repository");
+                if (repo.getString("full_name") != null) {
+                    LOGGER.fine("Event received on project : " + repo.getString("full_name"));
+                }
+            } catch (JSONException e) {
+                LOGGER.log(Level.SEVERE, "Unable to extract info from JSON received. Is it a valid JSON ?", e);
+            }
+        }
+
         post.setHeader("User-Agent", "webhook-relay-plugin");
         post.setEntity(new StringEntity(body, ContentType.create(contentType)));
 
@@ -83,7 +97,7 @@ public class WebhookReceiver extends WebSocketClient {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
-        LOGGER.fine(String.format("Result from post back: %s", res.toString()));
+        LOGGER.finest(String.format("Result from post back: %s", res.toString()));
 
     }
 
