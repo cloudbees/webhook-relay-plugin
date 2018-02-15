@@ -7,11 +7,7 @@ import hudson.Extension
 
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocketFactory
-import java.io.IOException
 import java.net.URI
-import java.net.URISyntaxException
-import java.security.KeyManagementException
-import java.security.NoSuchAlgorithmException
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -30,7 +26,6 @@ class WebsocketHandler {
             try {
                 receiver!!.closeBlocking()
             } catch (e: InterruptedException) {
-                // I doubt we care
                 LOGGER.log(Level.FINE, "Failure disconnecting from relay", e)
             }
 
@@ -80,7 +75,6 @@ class WebsocketHandler {
      * Once the connection is over, it returns. You can just establish it again (in fact this is what you should do).
      * The WebhookReceiver handles what happens when an event comes in.
      */
-    @Throws(URISyntaxException::class, InterruptedException::class, NoSuchAlgorithmException::class, KeyManagementException::class, IOException::class)
     private fun listen(sslSocketFactory: SSLSocketFactory) {
         receiver = WebhookReceiver(URI(relayURI!!))
 
