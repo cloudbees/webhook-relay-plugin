@@ -43,7 +43,7 @@ pipeline {
 
           pom = readMavenPom file: 'pom.xml'
           def releaseVersion = pom.version.replaceAll('-SNAPSHOT', "")
-          currentBuild.description = "Release: ${RELEASE_VERSION}"
+          currentBuild.description = "Release: ${releaseVersion}"
 
           deleteDir()
           checkout scm
