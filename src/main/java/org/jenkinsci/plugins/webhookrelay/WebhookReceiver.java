@@ -77,7 +77,7 @@ public class WebhookReceiver extends WebSocketClient {
         if (body != null) {
             try {
                 JSONObject bodyJson = JSONObject.fromObject(body);
-                JSONObject repo = JSONObject.fromObject(bodyJson.get("body")).getJSONObject("repository");
+                JSONObject repo = bodyJson.getJSONObject("repository");
                 if (repo.getString("full_name") != null) {
                     LOGGER.fine("Event received on project : " + repo.getString("full_name"));
                 }
