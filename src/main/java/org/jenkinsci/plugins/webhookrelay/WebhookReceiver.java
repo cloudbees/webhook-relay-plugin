@@ -74,7 +74,7 @@ public class WebhookReceiver extends WebSocketClient {
         }
 
         // for debug purpose, try to extract some useful infos from received event :
-        if (body != null) {
+        if (body != null && postBack != null && postBack.startsWith("/github-webhook")) {
             try {
                 JSONObject bodyJson = JSONObject.fromObject(body);
                 JSONObject repo = bodyJson.getJSONObject("repository");
