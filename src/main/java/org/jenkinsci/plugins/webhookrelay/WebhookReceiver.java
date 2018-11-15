@@ -54,12 +54,12 @@ public class WebhookReceiver extends WebSocketClient {
         JSONObject json = JSONObject.fromObject(message);
         JSONObject headers = json.getJSONObject("headers");
         String body = json.getString("body");
-
+        String postBack = json.getString("requestPath");
+        
         HttpClient client = HttpClientBuilder.create().build();
-        String postback = "github-webhook/";
 
         String baseUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
-        HttpPost post = new HttpPost(baseUrl + postback);
+        HttpPost post = new HttpPost(baseUrl + postBack);
         String contentType = "application/json";
 
         for (Object k : headers.names()) {
@@ -74,7 +74,7 @@ public class WebhookReceiver extends WebSocketClient {
         }
 
         // for debug purpose, try to extract some useful infos from received event :
-        if (body != null) {
+        if (body != null && postBack != null && postBack.startsWith("/github-webhook")) {
             try {
                 JSONObject bodyJson = JSONObject.fromObject(body);
                 JSONObject repo = bodyJson.getJSONObject("repository");
