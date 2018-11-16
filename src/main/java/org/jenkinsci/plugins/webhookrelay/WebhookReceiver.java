@@ -54,12 +54,13 @@ public class WebhookReceiver extends WebSocketClient {
         JSONObject json = JSONObject.fromObject(message);
         JSONObject headers = json.getJSONObject("headers");
         String body = json.getString("body");
+        // The requestPath always starts with a slash - for instance '/github-webhook'
         String postBack = json.getString("requestPath");
         
         HttpClient client = HttpClientBuilder.create().build();
 
         String baseUrl = rootUrl != null ? rootUrl : Jenkins.getInstance().getRootUrl();
-        HttpPost post = new HttpPost(baseUrl + postBack);
+        HttpPost post = new HttpPost(baseUrl.substring(0, baseUrl.lastIndexOf("/")) + postBack);
         String contentType = "application/json";
 
         for (Object k : headers.names()) {
