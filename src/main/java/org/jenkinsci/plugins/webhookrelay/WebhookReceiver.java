@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.webhookrelay;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -11,6 +12,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.java_websocket.util.JSONObjectHelper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -77,7 +79,10 @@ public class WebhookReceiver extends WebSocketClient {
         // for debug purpose, try to extract some useful infos from received event :
         if (body != null && postBack != null && postBack.startsWith("/github-webhook")) {
             try {
-                JSONObject bodyJson = JSONObject.fromObject(body);
+                if (StringUtils.startsWith(body, "payload=")) {
+                  body = StringUtils.substringAfter(body, "payload=");
+                }
+                JSONObject bodyJson = JSONObjectHelper.getJSONObjectDecodeSafe(body);
                 JSONObject repo = bodyJson.getJSONObject("repository");
                 if (repo.getString("full_name") != null) {
                     LOGGER.fine("Event received on project : " + repo.getString("full_name"));
