@@ -29,4 +29,17 @@ Start Jenkins with an environment variable `WEBHOOK_SUBSCRIPTION` which tells th
 
 See the documentation for the `webhook-relay` for more information on how this URL is constructed and used.
 
+### Troubleshooting
 
+#### Logging
+
+You can enable FINEST logging to check if payload are received and see the actual payload and request headers by add a log recorder for `org.jenkinsci.plugins.webhookrelay` under *Manage Jenkins > System Logs*. 
+
+#### Reconnect to the Webhook Relay
+
+If the `WebhookRelayManager` looses its connection and seem to not be receiving events anymore, you can reconnect it by executing the following Groovy script under *Manage Jenkins > Script Console*.
+
+```
+import org.jenkinsci.plugins.webhookrelay.*
+WebhookRelayManager.getInstance().reconnect(WebhookRelayStorage.relayURI);
+```
