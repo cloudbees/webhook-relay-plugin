@@ -98,6 +98,7 @@ public class WebhookReceiver extends WebSocketClient {
 
         HttpResponse res;
         try {
+            LOGGER.fine("Forwarding webhook event: " + post.toString());
             res = client.execute(post);
         } catch (IOException e) {
             LOGGER.warning(String.format("Error posting back webhook: %s", e.getMessage()));
