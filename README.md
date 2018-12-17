@@ -37,7 +37,7 @@ You can enable FINEST logging to check if payload are received and see the actua
 
 #### Reconnect to the Webhook Relay
 
-If the `WebhookRelayManager` looses its connection and seem to not be receiving events anymore, you can reconnect it by executing the following Groovy script under *Manage Jenkins > Script Console*.
+If the `WebhookRelayManager` loses its connection and seem to not be receiving events anymore, you can reconnect it by executing the following Groovy script under *Manage Jenkins > Script Console*.
 
 ```
 import org.jenkinsci.plugins.webhookrelay.*
