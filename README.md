@@ -9,7 +9,9 @@ There are two components in the webhook-relay universe:
 
 # webhook-relay
 
-The code for the webhook-relay and information on configuration can be found in <other repo>
+The code for the webhook-relay and information on configuration can be found on the following Confluence page:
+
+* [Engineering Operations / Projects / Webhook Relay](https://cloudbees.atlassian.net/wiki/spaces/OPS/pages/234782792/webhook-relay)
 
 ## Network Architecture
 
