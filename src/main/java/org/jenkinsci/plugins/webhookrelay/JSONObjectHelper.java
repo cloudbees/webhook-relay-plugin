@@ -1,4 +1,4 @@
-package org.java_websocket.util;
+package org.jenkinsci.plugins.webhookrelay;
 
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -8,7 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 public class JSONObjectHelper {
-  
+
   static final String ENCODING = "UTF-8";
 
   public static @Nonnull JSONObject getJSONObjectDecodeSafe(@Nonnull String body) {

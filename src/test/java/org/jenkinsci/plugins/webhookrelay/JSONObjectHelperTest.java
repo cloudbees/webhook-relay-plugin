@@ -1,4 +1,4 @@
-package org.java_websocket.util;
+package org.jenkinsci.plugins.webhookrelay;
 
 import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
@@ -6,8 +6,8 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.java_websocket.util.JSONObjectHelper.ENCODING;
-import static org.java_websocket.util.JSONObjectHelper.getJSONObjectDecodeSafe;
+import static org.jenkinsci.plugins.webhookrelay.JSONObjectHelper.ENCODING;
+import static org.jenkinsci.plugins.webhookrelay.JSONObjectHelper.getJSONObjectDecodeSafe;
 import static org.junit.Assert.assertThat;
 
 public class JSONObjectHelperTest {

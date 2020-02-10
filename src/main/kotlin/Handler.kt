@@ -79,6 +79,7 @@ class WebsocketHandler (val relayURI: String) {
             if (!receiver!!.connection.isOpen) {
                 return
             }
+            receiver!!.setConnectionLostTimeout(30) // enable 30s ping pongs
             receiver!!.await() //block here until it is closed, or errors out
         } finally {
             receiver!!.close()
