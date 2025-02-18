@@ -3,19 +3,23 @@
  */
 package org.jenkinsci.plugins.webhookrelay
 
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocketFactory
 import java.net.URI
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Create a persistent connection to the webhook forwarding remote service.
  */
-class WebsocketHandler (val relayURI: String) {
+class WebsocketHandler (val relayURI: String) : CoroutineScope {
 
     private val LOGGER = Logger.getLogger(WebsocketHandler::class.java.name)
+
+  private val job = SupervisorJob()
+  override val coroutineContext: CoroutineContext = Dispatchers.IO + job
 
     private var listener: Job? = null
     private var receiver: WebhookReceiver? = null

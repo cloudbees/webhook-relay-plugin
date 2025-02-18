@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.webhookrelay;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.ExtensionPoint;
 import hudson.init.InitMilestone;
@@ -39,6 +40,7 @@ public class WebhookRelayPlugin implements Describable<WebhookRelayPlugin>, Exte
         private String relayURI;
 
 
+        @SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD", justification="questionable design, needs to be fixed") // TODO FIXME
         public WebhookRelayPluginDescriptor() {
             load();
             WebhookRelayStorage.relayURI = relayURI;
@@ -50,6 +52,7 @@ public class WebhookRelayPlugin implements Describable<WebhookRelayPlugin>, Exte
         }
 
         @Override
+        @SuppressFBWarnings(value="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD", justification="questionable design, needs to be fixed") // TODO FIXME
         public boolean configure(StaplerRequest req, JSONObject formData) {
 
             WebhookRelayStorage.relayURI = formData.getString("relayURI");

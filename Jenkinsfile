@@ -8,8 +8,8 @@ pipeline {
   }
 
   tools {
-      maven 'mvn-3.5.2'
-      jdk 'jdk8'
+      maven 'mvn-3.9.9'
+      jdk 'jdk17'
   }
 
   options {
@@ -25,7 +25,7 @@ pipeline {
         expression { params.TRIGGER_RELEASE == false }
       }
       steps {
-        withMaven(globalMavenSettingsConfig: 'maven-settings-nexus-internal-ci-build-jobs', jdk: 'jdk8', maven: 'mvn-3.5.2') {
+        withMaven(globalMavenSettingsConfig: 'maven-settings-nexus-internal-ci-build-jobs', jdk: 'jdk17', maven: 'mvn-3.9.9') {
           sh "mvn clean install --batch-mode"
         }
       }
@@ -49,7 +49,7 @@ pipeline {
           checkout scm
           sh "git checkout $BRANCH_NAME"
 
-          withMaven(globalMavenSettingsConfig: 'maven-settings-nexus-internal-ci-build-jobs', jdk: 'jdk8', maven: 'mvn-3.5.2') {
+          withMaven(globalMavenSettingsConfig: 'maven-settings-nexus-internal-ci-build-jobs', jdk: 'jdk17', maven: 'mvn-3.9.9') {
             sshagent(['jenkins-ops.github-organizations-plugin']) {
               sh "mvn release:clean release:prepare release:perform --batch-mode"
             }

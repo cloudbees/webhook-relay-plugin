@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.cloudbees.jenkins.plugins</groupId>
     <artifactId>jenkins-plugins</artifactId>
-    <version>69</version>
+    <version>1122</version>
     <relativePath />
   </parent>
 
@@ -15,12 +15,11 @@
   <packaging>hpi</packaging>
 
   <properties>
-    <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-    <jenkins.version>2.89</jenkins.version>
-    <java.level>8</java.level>
-    <kotlin.version>1.2.21</kotlin.version>
+    <kotlin.version>2.1.10</kotlin.version>
     <!-- TODO Remove that when code inside java/org/java_websocket/ will be cleanup -->
     <findbugs.failOnError>false</findbugs.failOnError>
+    <!-- Javadoc runs before the kotlin compiler,  causing a failure -->
+    <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 
   <name>Webhook Relay Plugin</name>
@@ -68,7 +67,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.5.1</version>
         <executions>
           <!-- Replacing default-compile as it is treated specially by maven -->
           <execution>
@@ -96,17 +94,15 @@
   </build>
 
   <dependencies>
-
-    <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
     <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
-        <version>4.5.2</version>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>apache-httpcomponents-client-4-api</artifactId>
+      <version>4.5.14-269.vfa_2321039a_83</version>
     </dependency>
     <dependency>
       <groupId>org.java-websocket</groupId>
       <artifactId>Java-WebSocket</artifactId>
-      <version>1.4.0</version>
+      <version>1.6.0</version>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
@@ -117,9 +113,27 @@
     <dependency>
       <groupId>org.jetbrains.kotlinx</groupId>
       <artifactId>kotlinx-coroutines-core</artifactId>
-      <version>0.22.2</version>
+      <version>1.6.0</version>
     </dependency>
-
   </dependencies>
+  
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-bom</artifactId>
+        <version>${kotlin.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+<!--
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>23.0.0</version>
+      </dependency>
+-->
+    </dependencies>
+  </dependencyManagement>
 
 </project>
